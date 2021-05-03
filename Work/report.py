@@ -1,29 +1,32 @@
 import csv
-import sys
 import fileparse
+
 
 def read_portfolio(filename):
     '''Returns list of dictionaries of every stock from filename'''
 
-    return fileparse.parse_csv(filename,
-                               select=['price', 'shares', 'name'],
-                               has_headers=True,
-                               types=[float, int, str],
-                               silence_errors=True)
+    with open(filename, mode='r') as file:
+        portfolio = fileparse.parse_csv(file,
+                                        select=['price', 'shares', 'name'],
+                                        has_headers=True,
+                                        types=[float, int, str],
+                                        silence_errors=True)
+    return portfolio
+
 
 def read_prices(filename):
     '''Returns dictionary of {company, price} read from filename'''
 
-    prices_list = fileparse.parse_csv(filename,
-                                      has_headers=False,
-                                      types=[str, float],
-                                      silence_errors=True)
+    with open(filename, mode='r') as file:
+        prices_list = fileparse.parse_csv(file,
+                                        has_headers=False,
+                                        types=[str, float],
+                                        silence_errors=True)
     return dict(prices_list)
 
 
-
 def make_report(portfolio, prices):
-    report=[]
+    report = []
     for e in portfolio:
         buy_price = e['price']
         stock_name = e['name']
@@ -60,9 +63,14 @@ def portfolio_report(portfolio_filename, prices_filename):
     print_report(report)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Without providing 2 filenames we cannot proceed!", file=sys.stderr)
-        sys.exit(1)
+def main(argv):
+    if len(argv) != 3:
+        raise SystemExit(
+            "Usage: python report.py portfolio-file-name prices-file-name")
 
-    portfolio_report(portfolio_filename=sys.argv[1], prices_filename=sys.argv[2])
+    portfolio_report(portfolio_filename=argv[1], prices_filename=argv[2])
+
+
+if __name__ == "__main__":
+    import sys
+    main(sys.argv)
