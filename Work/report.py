@@ -1,9 +1,9 @@
-import csv
 import fileparse
-
+import stock
+import tableformat
 
 def read_portfolio(filename):
-    '''Returns list of dictionaries of every stock from filename'''
+    '''Returns list of Stock objects from filename'''
 
     with open(filename, mode='r') as file:
         portfolio = fileparse.parse_csv(file,
@@ -11,7 +11,9 @@ def read_portfolio(filename):
                                         has_headers=True,
                                         types=[float, int, str],
                                         silence_errors=True)
-    return portfolio
+
+    list_of_stocks = [ stock.Stock(name=e['name'], shares=e['shares'], price=e['price']) for e in portfolio ]
+    return list_of_stocks
 
 
 def read_prices(filename):
@@ -28,9 +30,9 @@ def read_prices(filename):
 def make_report(portfolio, prices):
     report = []
     for e in portfolio:
-        buy_price = e['price']
-        stock_name = e['name']
-        num_of_shares = e['shares']
+        buy_price = e.price
+        stock_name = e.name
+        num_of_shares = e.shares
         current_price = prices[stock_name]
         change = (current_price - buy_price)
         row = (stock_name, num_of_shares, current_price, change)
@@ -48,27 +50,40 @@ def get_headers_string(headers):
     return "\n".join((first_row, second_row))
 
 
-def print_report(report):
-    headers = ('Name', 'Shares', 'Price', 'Change')
-    print(get_headers_string(headers))
+def print_report(report, formatter):
+    formatter.headings(['Name', 'Shares', 'Price', 'Change'])
     for name, shares, price, change in report:
-        price = f"${price:.2f}"
-        print(f"{name:>10s} {shares:10} {price:>10} {change:10.2f}")
+        rowdata = [ name, str(shares), f'${price:.2f}', f'{change:.2f}' ]
+        formatter.row(rowdata)
 
 
-def portfolio_report(portfolio_filename, prices_filename):
+def portfolio_report(portfolio_filename, prices_filename, fmt='txt'):
+    '''
+    Make a stock report given portfolio and price data files.
+    '''
+
+    # read data files
     portfolio = read_portfolio(portfolio_filename)
     prices = read_prices(prices_filename)
+
+    # create a report
     report = make_report(portfolio, prices)
-    print_report(report)
+
+    # print it out
+    formatter = tableformat.create_formatter(fmt)
+    print_report(report, formatter)
 
 
 def main(argv):
-    if len(argv) != 3:
+    num_of_args = len(argv) 
+    if num_of_args < 3 or num_of_args > 4:
         raise SystemExit(
-            "Usage: python report.py portfolio-file-name prices-file-name")
+            "Usage: python report.py portfolio-file-name prices-file-name [format(txt, html, csv)]")
 
-    portfolio_report(portfolio_filename=argv[1], prices_filename=argv[2])
+    if num_of_args == 3:
+        portfolio_report(portfolio_filename=argv[1], prices_filename=argv[2])
+    if num_of_args == 4:
+        portfolio_report(portfolio_filename=argv[1], prices_filename=argv[2], fmt=argv[3])
 
 
 if __name__ == "__main__":

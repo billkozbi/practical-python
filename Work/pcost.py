@@ -1,5 +1,5 @@
 import fileparse
-
+import stock
 
 def portfolio_cost(filename):
     '''
@@ -8,9 +8,11 @@ def portfolio_cost(filename):
     '''
     with open(filename, mode='r') as file:
         portfolio = fileparse.parse_csv(
-            file, types=[int, float], has_headers=True, select=['shares', 'price'])
+            file, types=[str, int, float], has_headers=True, select=['name', 'shares', 'price'])
+    
+    list_of_stocks = [ stock.Stock(name=e['name'], shares=e['shares'], price=e['price']) for e in portfolio ]
 
-    return sum(r['shares'] * r['price'] for r in portfolio)
+    return sum(r.cost() for r in list_of_stocks)
 
 
 def main(argv):
